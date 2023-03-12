@@ -13,6 +13,7 @@ import java.util.List;
  * 1. 요청 DTO는 나중에 배움
  * 2. Service도 나중에 배움 (트랜잭션 처리 commit, rollback)
  * 3. 이번장 목표 : Repository와 ORM
+ * 4. 숙제 Controller 테스트 코드, Repository 테스트 코드 작성
  */
 @RestController
 public class CustomerController {
