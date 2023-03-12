@@ -14,35 +14,42 @@ import java.util.List;
 @Slf4j
 @Repository
 public class CustomerRepository {
-    private Connection connection;
+    private DataSource dataSource;
 
     public CustomerRepository(DataSource dataSource) {
-        try {
-            this.connection = dataSource.getConnection();
-
-        } catch (SQLException e) {
-            log.error(e.getMessage());
-            throw new RuntimeException(e.getSQLState());
-        }
+        this.dataSource = dataSource;
     }
 
     public void save(Customer customer) {
-        String sql = "INSERT INTO customer (name, tel) VALUES (?, ?)";
+        Connection connection = null;
+        PreparedStatement statement = null;
         try {
-            PreparedStatement statement = connection.prepareStatement(sql);
+            String sql = "INSERT INTO customer (name, tel) VALUES (?, ?)";
+            connection = dataSource.getConnection();
+            statement = connection.prepareStatement(sql);
             statement.setString(1, customer.getName());
             statement.setString(2, customer.getTel());
             statement.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage());
             throw new RuntimeException(e.getSQLState());
+        } finally {
+            try {
+                statement.close();
+                connection.close();
+            } catch (SQLException e) {
+                log.error(e.getMessage());
+            }
         }
     }
 
     public void update(Customer customer) {
-        String sql = "UPDATE customer SET name = ?, tel = ? WHERE id = ?";
+        Connection connection = null;
+        PreparedStatement statement = null;
         try {
-            PreparedStatement statement = connection.prepareStatement(sql);
+            String sql = "UPDATE customer SET name = ?, tel = ? WHERE id = ?";
+            connection = dataSource.getConnection();
+            statement = connection.prepareStatement(sql);
             statement.setString(1, customer.getName());
             statement.setString(2, customer.getTel());
             statement.setLong(3, customer.getId());
@@ -50,48 +57,79 @@ public class CustomerRepository {
         } catch (SQLException e) {
             log.error(e.getMessage());
             throw new RuntimeException(e.getSQLState());
+        } finally {
+            try {
+                statement.close();
+                connection.close();
+            } catch (SQLException e) {
+                log.error(e.getMessage());
+            }
         }
     }
 
     public void delete(Long id) {
-        String sql = "DELETE FROM customer WHERE id = ?";
+        Connection connection = null;
+        PreparedStatement statement = null;
         try {
-            PreparedStatement statement = connection.prepareStatement(sql);
+            String sql = "DELETE FROM customer WHERE id = ?";
+            connection = dataSource.getConnection();
+            statement = connection.prepareStatement(sql);
             statement.setLong(1, id);
             statement.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage());
             throw new RuntimeException(e.getSQLState());
+        } finally {
+            try {
+                statement.close();
+                connection.close();
+            } catch (SQLException e) {
+                log.error(e.getMessage());
+            }
         }
     }
 
     public Customer findById(Long id) {
-        String sql = "SELECT * FROM customer WHERE id = ?";
+        Connection connection = null;
+        PreparedStatement statement = null;
+        ResultSet rs = null;
         try {
-            PreparedStatement statement = connection.prepareStatement(sql);
+            String sql = "SELECT * FROM customer WHERE id = ?";
+            connection = dataSource.getConnection();
+            statement = connection.prepareStatement(sql);
             statement.setLong(1, id);
-            ResultSet rs = statement.executeQuery();
-
+            rs = statement.executeQuery();
             if (rs.next()) {
                 return mapper(rs);
-            }else{
+            } else {
                 throw new RuntimeException("DB warning : 해당 id의 고객이 없습니다");
             }
         } catch (SQLException e) {
             log.error(e.getMessage());
             throw new RuntimeException(e.getSQLState());
+        } finally {
+            try {
+                rs.close();
+                statement.close();
+                connection.close();
+            }catch (SQLException e){
+                log.error(e.getMessage());
+            }
         }
     }
 
     public List<Customer> findAll(int page) {
-        final int row = 2;
-        String sql = "SELECT * FROM customer limit ?, ?";
+        Connection connection = null;
+        PreparedStatement statement = null;
+        ResultSet rs = null;
         try {
-            PreparedStatement statement = connection.prepareStatement(sql);
-            statement.setInt(1, page*row);
+            final int row = 2;
+            String sql = "SELECT * FROM customer limit ?, ?";
+            connection = dataSource.getConnection();
+            statement = connection.prepareStatement(sql);
+            statement.setInt(1, page * row);
             statement.setInt(2, row);
-            ResultSet rs = statement.executeQuery();
-
+            rs = statement.executeQuery();
             List<Customer> customers = new ArrayList<>();
             while (rs.next()) {
                 Customer c = mapper(rs);
@@ -101,14 +139,20 @@ public class CustomerRepository {
         } catch (SQLException e) {
             log.error(e.getMessage());
             throw new RuntimeException(e.getSQLState());
+        } finally {
+            try {
+                rs.close();
+                statement.close();
+                connection.close();
+            }catch (SQLException e){
+                log.error(e.getMessage());
+            }
         }
     }
 
     // Object Relational Mapping
-    public Customer mapper(ResultSet rs) throws SQLException{
+    public Customer mapper(ResultSet rs) throws SQLException {
         System.out.println("mapper 실행");
         return new Customer(rs.getLong("id"), rs.getString("name"), rs.getString("tel"));
     }
-
-
 }
